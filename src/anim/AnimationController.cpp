@@ -96,6 +96,41 @@ std::wstring ResolveVideoPath(const std::string& path) {
     return std::wstring();
 }
 
+static COLORREF HsvToRgb(float h, float s, float v) {
+    while (h < 0.0f) h += 360.0f;
+    while (h >= 360.0f) h -= 360.0f;
+    float c = v * s;
+    float x = c * (1.0f - std::abs(std::fmod(h / 60.0f, 2.0f) - 1.0f));
+    float m = v - c;
+    float r = 0, g = 0, b = 0;
+    if (h < 60.0f) { r = c; g = x; b = 0; }
+    else if (h < 120.0f) { r = x; g = c; b = 0; }
+    else if (h < 180.0f) { r = 0; g = c; b = x; }
+    else if (h < 240.0f) { r = 0; g = x; b = c; }
+    else if (h < 300.0f) { r = x; g = 0; b = c; }
+    else { r = c; g = 0; b = x; }
+    int ir = std::clamp(static_cast<int>((r + m) * 255.0f + 0.5f), 0, 255);
+    int ig = std::clamp(static_cast<int>((g + m) * 255.0f + 0.5f), 0, 255);
+    int ib = std::clamp(static_cast<int>((b + m) * 255.0f + 0.5f), 0, 255);
+    return RGB(ir, ig, ib);
+}
+
+static COLORREF LerpColor(COLORREF c1, COLORREF c2, float t) {
+    t = std::clamp(t, 0.0f, 1.0f);
+    int r = static_cast<int>(GetRValue(c1) + t * (GetRValue(c2) - GetRValue(c1)) + 0.5f);
+    int g = static_cast<int>(GetGValue(c1) + t * (GetGValue(c2) - GetGValue(c1)) + 0.5f);
+    int b = static_cast<int>(GetBValue(c1) + t * (GetBValue(c2) - GetBValue(c1)) + 0.5f);
+    return RGB(std::clamp(r, 0, 255), std::clamp(g, 0, 255), std::clamp(b, 0, 255));
+}
+
+static COLORREF ScaleColor(COLORREF c, float scale) {
+    scale = std::clamp(scale, 0.0f, 1.0f);
+    int r = static_cast<int>(GetRValue(c) * scale + 0.5f);
+    int g = static_cast<int>(GetGValue(c) * scale + 0.5f);
+    int b = static_cast<int>(GetBValue(c) * scale + 0.5f);
+    return RGB(std::clamp(r, 0, 255), std::clamp(g, 0, 255), std::clamp(b, 0, 255));
+}
+
 int ResolveTargetIndex(const AnimationAction& action, const PatternGrid& grid) {
     int idx = -1;
     if (action.targetId >= 0) {
@@ -104,8 +139,11 @@ int ResolveTargetIndex(const AnimationAction& action, const PatternGrid& grid) {
     if (idx < 0 && !action.targetName.empty()) {
         idx = grid.FindIndexByName(action.targetName);
     }
-    if (idx < 0 && action.targetIndex >= 0) {
+    if (idx < 0 && action.targetIndex >= 0 && action.targetIndex < static_cast<int>(grid.GetCount())) {
         idx = action.targetIndex;
+    }
+    if (idx < 0 && action.targetId >= 0 && action.targetId < static_cast<int>(grid.GetCount())) {
+        idx = action.targetId;
     }
     return idx;
 }
@@ -352,7 +390,7 @@ void AnimationController::ApplyFrame(const AnimationFrame& frame, PatternGrid& g
         case ActionType::AllOn:
             grid.SetAllVisible(true);
             ClearPalpitations(grid);
-            grid.SetAllColor(RGB(255, 255, 255));
+            grid.SetAllColor(action.color);
             break;
 
         case ActionType::AllOff:
@@ -364,8 +402,24 @@ void AnimationController::ApplyFrame(const AnimationFrame& frame, PatternGrid& g
             int idx = ResolveTargetIndex(action, grid);
             if (idx >= 0 && idx < static_cast<int>(grid.GetCount())) {
                 RemovePalpitationsForArea(idx, grid);
-                grid.SetAreaColor(idx, RGB(255, 255, 255));
+                grid.SetAreaColor(idx, action.color);
                 grid.SetAreaVisible(idx, true);
+            }
+            break;
+        }
+
+        case ActionType::SetColor: {
+            if (action.targetId == -2) {
+                ClearPalpitations(grid);
+                grid.SetAllColor(action.color);
+                grid.SetAllVisible(true);
+            } else {
+                int idx = ResolveTargetIndex(action, grid);
+                if (idx >= 0 && idx < static_cast<int>(grid.GetCount())) {
+                    RemovePalpitationsForArea(idx, grid);
+                    grid.SetAreaColor(idx, action.color);
+                    grid.SetAreaVisible(idx, true);
+                }
             }
             break;
         }
@@ -461,6 +515,7 @@ void AnimationController::ApplyFrame(const AnimationFrame& frame, PatternGrid& g
                     m_activeVideoPlayer->Stop();
                 }
                 m_activeVideoPlayer = it->second.get();
+                m_activeVideoPlayer->SetFadeDuration(action.fadeDuration);
                 m_activeVideoPlayer->Play();
             } else {
                 std::cerr << "[AnimationController] Could not find or open background video: "
@@ -483,6 +538,21 @@ void AnimationController::ApplyFrame(const AnimationFrame& frame, PatternGrid& g
             palp.maxBrightness = action.maxBrightness;
             palp.frequency = action.frequency > 0.0f ? action.frequency : 1.2f;
             palp.timer = 0.0;
+            palp.hasCustomBrightness = action.hasCustomBrightness;
+
+            if (action.isRainbow) {
+                palp.mode = PalpitateMode::Rainbow;
+            } else if (action.colors.size() >= 2) {
+                palp.mode = PalpitateMode::TwoColors;
+                palp.colorA = action.colors[0];
+                palp.colorB = action.colors[1];
+            } else if (action.colors.size() == 1) {
+                palp.mode = PalpitateMode::Brightness;
+                palp.colorA = action.colors[0];
+            } else {
+                palp.mode = PalpitateMode::Brightness;
+                palp.colorA = RGB(255, 255, 255);
+            }
 
             if (action.hasCustomPhase) {
                 palp.initialPhase = action.initialPhase;
@@ -512,6 +582,9 @@ void AnimationController::ApplyFrame(const AnimationFrame& frame, PatternGrid& g
             } else {
                 for (int id : action.targetIds) {
                     int idx = grid.FindIndexById(id);
+                    if (idx < 0 && id >= 0 && id < static_cast<int>(grid.GetCount())) {
+                        idx = id;
+                    }
                     if (idx >= 0 && idx < static_cast<int>(grid.GetCount())) {
                         RemovePalpitationsForArea(idx, grid);
                         palp.areaIndices.push_back(idx);
@@ -527,11 +600,7 @@ void AnimationController::ApplyFrame(const AnimationFrame& frame, PatternGrid& g
             }
 
             if (!palp.areaIndices.empty()) {
-                double phase = palp.initialPhase;
-                double wave = 0.5 + 0.5 * std::cos(phase);
-                float brightness = palp.minBrightness + static_cast<float>(wave) * (palp.maxBrightness - palp.minBrightness);
-                int val = static_cast<int>(std::clamp(brightness * 255.0f + 0.5f, 0.0f, 255.0f));
-                COLORREF col = RGB(val, val, val);
+                COLORREF col = ComputePalpitationColor(palp, 0.0);
                 for (int idx : palp.areaIndices) {
                     grid.SetAreaColor(idx, col);
                     grid.SetAreaVisible(idx, true);
@@ -549,6 +618,32 @@ void AnimationController::ApplyFrame(const AnimationFrame& frame, PatternGrid& g
     }
 }
 
+COLORREF AnimationController::ComputePalpitationColor(const ActivePalpitation& p, double timer) const {
+    double phase = p.initialPhase + timer * p.frequency * 2.0 * 3.14159265358979323846;
+    double wave = 0.5 + 0.5 * std::cos(phase); // 0.0 to 1.0
+
+    if (p.mode == PalpitateMode::Rainbow) {
+        float hue = static_cast<float>(std::fmod(phase * 180.0 / 3.14159265358979323846, 360.0));
+        if (hue < 0.0f) hue += 360.0f;
+        float val = 1.0f;
+        if (p.hasCustomBrightness) {
+            val = p.minBrightness + static_cast<float>(wave) * (p.maxBrightness - p.minBrightness);
+        }
+        return HsvToRgb(hue, 1.0f, val);
+    } else if (p.mode == PalpitateMode::TwoColors) {
+        COLORREF morph = LerpColor(p.colorA, p.colorB, static_cast<float>(wave));
+        if (p.hasCustomBrightness) {
+            float brightness = p.minBrightness + static_cast<float>(wave) * (p.maxBrightness - p.minBrightness);
+            return ScaleColor(morph, brightness);
+        }
+        return morph;
+    } else {
+        // Brightness mode
+        float brightness = p.minBrightness + static_cast<float>(wave) * (p.maxBrightness - p.minBrightness);
+        return ScaleColor(p.colorA, brightness);
+    }
+}
+
 void AnimationController::ClearPalpitations(PatternGrid& grid) {
     for (const auto& p : m_activePalpitations) {
         for (int idx : p.areaIndices) {
@@ -561,15 +656,7 @@ void AnimationController::ClearPalpitations(PatternGrid& grid) {
 void AnimationController::UpdatePalpitations(double deltaTime, PatternGrid& grid) {
     for (auto& p : m_activePalpitations) {
         p.timer += deltaTime;
-
-        // Smooth cosine ease-in-out breathing oscillation: peak is at 0, smooth descent to minimum at PI
-        double phase = p.initialPhase + p.timer * p.frequency * 2.0 * 3.14159265358979323846;
-        double wave = 0.5 + 0.5 * std::cos(phase);
-
-        float brightness = p.minBrightness + static_cast<float>(wave) * (p.maxBrightness - p.minBrightness);
-        int val = static_cast<int>(std::clamp(brightness * 255.0f + 0.5f, 0.0f, 255.0f));
-        COLORREF color = RGB(val, val, val);
-
+        COLORREF color = ComputePalpitationColor(p, p.timer);
         for (int idx : p.areaIndices) {
             grid.SetAreaColor(idx, color);
             grid.SetAreaVisible(idx, true);

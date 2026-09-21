@@ -28,9 +28,10 @@ public:
 
     // --- Show mode --------------------------------------------------------
     void RenderBlack();
-    void DrawBackgroundVideo(const BYTE* pixels, int videoWidth, int videoHeight);
+    void DrawBackgroundVideo(const BYTE* pixels, int videoWidth, int videoHeight, float brightness = 1.0f);
     void RenderAreas(const std::vector<ProjectionArea>& areas,
-                     const BYTE* bgVideoPixels = nullptr, int bgVideoWidth = 0, int bgVideoHeight = 0);
+                     const BYTE* bgVideoPixels = nullptr, int bgVideoWidth = 0, int bgVideoHeight = 0,
+                     float bgVideoBrightness = 1.0f);
 
     // --- Image & Text rendering ------------------------------------------
     void DrawQuadImage(const Quad& quad, Gdiplus::Bitmap* bitmap, const std::string& imagePath = "");
@@ -107,6 +108,12 @@ private:
     void*   m_scratchBits;
     int     m_scratchWidth;
     int     m_scratchHeight;
+
+    // Solid black DC and bitmap for hardware-accelerated video shadeoff
+    HDC     m_blackDC;
+    HBITMAP m_blackBitmap;
+    HBITMAP m_blackOldBitmap;
+    void    EnsureBlackBitmap();
 
     void LoadCustomFonts();
 

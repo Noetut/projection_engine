@@ -1,0 +1,176 @@
+# ==============================================================================
+# Animación: Show Espectacular (Virguerías Audiovisuales y Oscilaciones de Color)
+# ==============================================================================
+# Configuración espacial de IDs:
+#   - Columna 1 (Izquierda - Vinilos):  0 (mecharadio), 1 (cancionero), 2 (turboviolencia)
+#   - Columna 2 (Marcos Izquierda):     3 (aneto), 9 (green_screen)
+#   - Columna 3 (Marcos Centro):        4 (brais_clouds), 8 (pepus)
+#   - Columna 4 (Marcos Derecha):       5 (brais_eyes), 7 (margarita)
+#   - Columna 5 (Derecha - Bufanda):    6 (scarf_vvv)
+#   - Banner Superior (Texto):          11 (caja de texto)
+# ==============================================================================
+name: Show Espectacular
+loop: true
+default_step: 0.1s
+reset_images: true
+preload_images: cloud_01, Portada_original, talon_de_aquiles
+preload_videos: clouds_video, firework_video
+
+# ------------------------------------------------------------------------------
+# ACTO 1: EL DESPERTAR DEL MAPEO (Grid Awakening & Chromatic Chase)
+# Blackout inicial, pulsos staccato de color entre extremos y aceleración orbital.
+# ------------------------------------------------------------------------------
+0.5s CLEAR_IMAGES & CLEAR_TEXT ALL & STOP_PALPITATE & STOP_VIDEO & ALL_OFF
+
+# Disparos de sonar entre los extremos (Vinilo sup 2 <-> Bufanda 6) con colores contrastados
+0.07s ON 2 cyan
+0.07s ALL_OFF
+0.07s ON 6 magenta
+0.07s ALL_OFF
+0.06s ON 2 1 0 cyan
+0.06s ALL_OFF
+0.06s ON 6 magenta
+0.06s ALL_OFF
+
+# Órbita perimetral cromática (2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 0 -> 1)
+0.06s ON 2 red
+0.06s OFF 2 & ON 3 orange
+0.06s OFF 3 & ON 4 gold
+0.06s OFF 4 & ON 5 lime
+0.06s OFF 5 & ON 6 cyan
+0.06s OFF 6 & ON 7 blue
+0.06s OFF 7 & ON 8 purple
+0.06s OFF 8 & ON 9 magenta
+0.06s OFF 9 & ON 0 neon_pink
+0.06s OFF 0 & ON 1 crimson
+
+# Segunda vuelta orbital ultra-rápida con estela neón
+0.04s ON 2 neon_blue
+0.04s ON 3 neon_green & OFF 1
+0.04s ON 4 gold & OFF 2
+0.04s ON 5 neon_pink & OFF 3
+0.04s ON 6 cyan & OFF 4
+0.04s ON 7 magenta & OFF 5
+0.04s ON 8 purple & OFF 6
+0.04s ON 9 orange & OFF 7
+0.04s ON 0 lime & OFF 8
+0.04s ON 1 red & OFF 9
+0.04s OFF 0 & OFF 1
+0.08s ALL_OFF
+
+# Slam flash de apertura
+0.08s ALL_ON
+0.2s ALL_OFF
+
+# ------------------------------------------------------------------------------
+# ACTO 2: SUEÑO CICLOGÉNICO (Atmospheric Clouds & Color Oscillation Waves)
+# Vídeo de nubes de fondo, tipografía cinemática y respiración cromática armónica.
+# ------------------------------------------------------------------------------
+# Arranca vídeo de nubes con banner de texto superior
+0.2s BG_VIDEO clouds_video & TEXT 11 "Bebas Neue Cyrillic" 105 bold "ÁREA CICLOGÉNICA"
+
+# Respiración cromática en vinilos: oscilaciones suaves entre tonos oceánicos (0.8Hz)
+0.2s PALPITATE 0 cyan blue 0.8Hz 0deg & PALPITATE 1 aqua purple 0.8Hz 120deg & PALPITATE 2 neon_blue magenta 0.8Hz 240deg
+
+# Proyección de imágenes de arte en marcos simétricos
+0.3s IMAGE 9 cloud_01
+0.3s IMAGE 4 Portada_original
+
+# Contrapunto de oscilación en marcos laterales y bufanda (turquesa <-> dorado, neón <-> magenta)
+0.2s PALPITATE 3 5 turquoise gold 1.1Hz 0deg & PALPITATE 8 7 neon_blue cyan 1.1Hz 180deg & PALPITATE 6 purple magenta 0.6Hz 90deg
+
+# Sostener la atmósfera contemplativa
+WAIT 3
+
+# Cambio de texto en vivo
+TEXT 11 "Bebas Neue Cyrillic" 105 bold "TORMENTA INMINENTE"
+WAIT 1.5
+
+# ------------------------------------------------------------------------------
+# ACTO 3: CUENTA ATRÁS Y TRANSICIÓN GLITCH (The Pre-Ignition Staccato)
+# Cuenta regresiva dramática en el banner, flashes y ráfaga estroboscópica.
+# ------------------------------------------------------------------------------
+0.08s STOP_PALPITATE & CLEAR_IMAGES & ALL_OFF & TEXT 11 "Bebas Neue Cyrillic" 110 bold "3"
+0.25s ALL_ON
+0.1s ALL_OFF
+0.08s TEXT 11 "Bebas Neue Cyrillic" 110 bold "2"
+0.2s ALL_ON
+0.1s ALL_OFF
+0.08s TEXT 11 "Bebas Neue Cyrillic" 110 bold "1"
+0.15s ALL_ON
+0.08s ALL_OFF & CLEAR_TEXT 11
+
+# Ráfaga estroboscópica acelerada (Glitch Crescendo)
+0.04s ALL_ON
+0.04s ALL_OFF
+0.035s ALL_ON
+0.035s ALL_OFF
+0.03s ALL_ON
+0.03s ALL_OFF
+0.025s ALL_ON
+0.15s ALL_OFF
+
+# ------------------------------------------------------------------------------
+# ACTO 4: IMPACTO PIROTÉCNICO & TABLERO DE AJEDREZ NEÓN (Fireworks Shockwave)
+# Estallido de fuegos artificiales, expansión radial en oro/rojo y duelo de ajedrez cyan/magenta.
+# ------------------------------------------------------------------------------
+# Explosión central dorada sincronizada con fuegos artificiales
+0.06s BG_VIDEO firework_video & TEXT 11 "Bebas Neue Cyrillic" 100 bold "SUPERNOVA" & ON 4 8 gold
+
+# Expansión radial hacia afuera (Naranja -> Rojo fuego)
+0.06s OFF 4 8 & ON 3 9 5 7 orange
+0.06s OFF 3 9 5 7 & ON 0 1 2 6 red
+0.06s ALL_ON
+0.08s ALL_OFF
+
+# Ritmo cruzado de Ajedrez Neón (Cyan vs Magenta Battle)
+0.06s ON 2 0 4 7 cyan & ON 1 3 5 8 6 magenta
+0.06s ON 2 0 4 7 magenta & ON 1 3 5 8 6 cyan
+0.06s ON 2 0 4 7 cyan & ON 1 3 5 8 6 magenta
+0.06s ON 2 0 4 7 magenta & ON 1 3 5 8 6 cyan
+0.05s ON 2 0 4 7 gold & ON 1 3 5 8 6 neon_blue
+0.05s ON 2 0 4 7 neon_blue & ON 1 3 5 8 6 gold
+0.05s ON 2 0 4 7 neon_green & ON 1 3 5 8 6 neon_pink
+0.05s ON 2 0 4 7 neon_pink & ON 1 3 5 8 6 neon_green
+0.1s ALL_OFF
+
+# Ping-Pong Fila Superior vs Fila Inferior (Verde Lima vs Rosa Neón)
+0.05s ON 2 3 4 5 lime
+0.05s OFF 2 3 4 5 & ON 0 9 8 7 neon_pink
+0.05s ON 2 3 4 5 lime & OFF 0 9 8 7
+0.05s OFF 2 3 4 5 & ON 0 9 8 7 neon_pink
+0.04s ON 2 3 4 5 lime & OFF 0 9 8 7
+0.04s OFF 2 3 4 5 & ON 0 9 8 7 neon_pink
+0.1s ALL_OFF
+
+# ------------------------------------------------------------------------------
+# ACTO 5: LA OLA ARCOÍRIS MAESTRA (The Master Kinetic Rainbow Wave)
+# Oleaje continuo de todo el espectro visible recorriendo la instalación de
+# izquierda a derecha sobre el fondo de fuegos artificiales.
+# ------------------------------------------------------------------------------
+TEXT 11 "Bebas Neue Cyrillic" 105 bold "ÁREA CICLOGÉNICA"
+
+# Barrido de ignición espectral en ola (0.12s de desfase por columna)
+0.12s PALPITATE 0 1 2 RAINBOW 0.8Hz 0deg
+0.12s PALPITATE 3 9 RAINBOW 0.8Hz 45deg
+0.12s PALPITATE 4 8 RAINBOW 0.8Hz 90deg
+0.12s PALPITATE 5 7 RAINBOW 0.8Hz 135deg
+0.12s PALPITATE 6 RAINBOW 0.8Hz 180deg
+
+# Proyección de arte fotográfico flotando sobre la ola arcoíris
+0.5s IMAGE 9 talon_de_aquiles
+0.5s IMAGE 4 cloud_01
+
+# La ola arcoíris y los fuegos fluyen juntos armónicamente
+WAIT 6
+
+# ------------------------------------------------------------------------------
+# ACTO 6: GRAN CLÍMAX & REINICIO (Grand Finale Climax)
+# Impactos de luz finales antes de repetir el ciclo completo.
+# ------------------------------------------------------------------------------
+0.1s STOP_PALPITATE & CLEAR_IMAGES & ALL_ON
+0.08s ALL_OFF
+0.12s ALL_ON
+0.08s ALL_OFF
+0.3s ALL_ON
+0.8s ALL_OFF & CLEAR_TEXT 11 & STOP_VIDEO

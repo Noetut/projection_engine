@@ -18,7 +18,7 @@ name: Área Ciclogénica
 loop: false
 default_step: 0.2s
 reset_images: true
-preload_images: cloud_01, Portada, talon_de_aquiles
+preload_images: cloud_01, Portada_original, talon_de_aquiles
 preload_videos: clouds_video
 
 # ------------------------------------------------------------------------------
@@ -113,15 +113,21 @@ OFF 8 & IMAGE 9 cloud_01
 WAIT_CLICK
 
 # ------------------------------------------------------------------------------
-# Segmento 7 (antes Segmento 3):
-# 1. Proyectar talon_de_aquiles en zona 9
-# 2. Delay antes de que aparezca el vídeo (modificable con WAIT <segundos>, ej: WAIT 3)
-# 3. Arrancar el vídeo clouds_video de fondo y proyectar "ÁREA CICLOGÉNICA" en caja de texto (ID 11)
-#    La imagen y el texto quedan por encima del vídeo de fondo.
-# 4. Esperar a clic izquierdo.
+# Segmento 7: Foto de la editorial
+# Proyecta la imagen talon_de_aquiles en la zona 9 (frame_green_screen).
+# Espera a un clic izquierdo para avanzar al Segmento 8.
 # ------------------------------------------------------------------------------
 IMAGE 9 talon_de_aquiles
-WAIT 3
+WAIT_CLICK
+
+# ------------------------------------------------------------------------------
+# Segmento 8: Vídeo de fondo y título
+# Arranca el vídeo clouds_video de fondo (con shadeoff suave al loopear)
+# y proyecta "ÁREA CICLOGÉNICA" en la caja de texto superior (ID 11).
+# La imagen de la editorial (zona 9) se mantiene por encima del vídeo de fondo.
+# Espera a un clic izquierdo.
+# ------------------------------------------------------------------------------
 BG_VIDEO clouds_video & TEXT 11 "Bebas Neue Cyrillic" 100 bold "ÁREA CICLOGÉNICA"
 WAIT_CLICK
+
 

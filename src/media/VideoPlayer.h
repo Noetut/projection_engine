@@ -46,6 +46,13 @@ public:
     int GetHeight() const { return m_height; }
     const BYTE* GetFrameData() const;
 
+    // Fade / Shadeoff control
+    void SetFadeDuration(double seconds) { m_fadeDuration = (seconds >= 0.0) ? seconds : 0.0; }
+    double GetFadeDuration() const { return m_fadeDuration; }
+    float GetBrightness() const { return m_currentBrightness.load(); }
+    double GetDuration() const { return m_duration; }
+    double GetCurrentTime() const { return m_currentTime; }
+
 private:
     bool SetupSourceReader(const std::wstring& filePath);
     void WorkerLoop();
@@ -62,6 +69,14 @@ private:
     int m_height;
     double m_frameDuration;
     double m_timeAccumulator;
+
+    // Duration, playback position and shadeoff/fade tracking
+    double m_duration;
+    double m_currentTime;
+    double m_fadeDuration;
+    std::atomic<float> m_currentBrightness;
+    LONGLONG m_lastSampleTimestamp;
+    std::atomic<bool> m_loopOccurred;
 
     std::atomic<bool> m_isPlaying;
     std::atomic<bool> m_hasFrame;

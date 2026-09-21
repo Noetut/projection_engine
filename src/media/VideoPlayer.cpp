@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cstring>
 #include <algorithm>
+#include <cmath>
 
 #include "util/StringUtil.h"
 
@@ -15,6 +16,12 @@ VideoPlayer::VideoPlayer()
     , m_height(0)
     , m_frameDuration(1.0 / 30.0)
     , m_timeAccumulator(0.0)
+    , m_duration(0.0)
+    , m_currentTime(0.0)
+    , m_fadeDuration(1.0)
+    , m_currentBrightness(1.0f)
+    , m_lastSampleTimestamp(0)
+    , m_loopOccurred(false)
     , m_isPlaying(false)
     , m_hasFrame(false)
     , m_stopWorker(false)
@@ -112,6 +119,20 @@ bool VideoPlayer::SetupSourceReader(const std::wstring& filePath) {
     }
 
     m_currentFilePath = filePath;
+    m_duration = 0.0;
+    m_currentTime = 0.0;
+    m_currentBrightness = 1.0f;
+    m_lastSampleTimestamp = 0;
+    m_loopOccurred = false;
+
+    PROPVARIANT var;
+    PropVariantInit(&var);
+    if (SUCCEEDED(m_reader->GetPresentationAttribute(MF_SOURCE_READER_MEDIASOURCE, MF_PD_DURATION, &var))) {
+        m_duration = static_cast<double>(var.hVal.QuadPart) / 10000000.0;
+        PropVariantClear(&var);
+        std::cout << "[VideoPlayer] Stream duration: " << m_duration << "s" << std::endl;
+    }
+
     size_t bufferSize = static_cast<size_t>(m_width) * static_cast<size_t>(m_height) * 4;
     {
         std::lock_guard<std::mutex> lock(m_displayMutex);
@@ -181,6 +202,11 @@ void VideoPlayer::Close() {
     m_width = 0;
     m_height = 0;
     m_timeAccumulator = 0.0;
+    m_duration = 0.0;
+    m_currentTime = 0.0;
+    m_currentBrightness = 1.0f;
+    m_lastSampleTimestamp = 0;
+    m_loopOccurred = false;
     m_currentFilePath.clear();
 
     {
@@ -232,6 +258,9 @@ void VideoPlayer::Stop() {
     m_isPlaying = false;
     m_workerActive = false;
     m_timeAccumulator = 0.0;
+    m_currentTime = 0.0;
+    m_currentBrightness = 1.0f;
+    m_loopOccurred = false;
 
     if (m_reader) {
         std::unique_lock<std::mutex> lock(m_queueMutex);
@@ -268,6 +297,7 @@ void VideoPlayer::Update(double deltaTime) {
     if (!m_isPlaying || !m_reader) return;
 
     m_timeAccumulator += deltaTime;
+    m_currentTime += deltaTime;
 
     while (m_timeAccumulator >= m_frameDuration) {
         m_timeAccumulator -= m_frameDuration;
@@ -285,6 +315,10 @@ void VideoPlayer::Update(double deltaTime) {
         }
 
         if (framePopped) {
+            if (m_loopOccurred.exchange(false)) {
+                m_currentTime = 0.0;
+            }
+
             std::lock_guard<std::mutex> dLock(m_displayMutex);
             if (!nextFrame.empty()) {
                 m_displayBuffer = std::move(nextFrame);
@@ -295,6 +329,38 @@ void VideoPlayer::Update(double deltaTime) {
 
     if (m_timeAccumulator > m_frameDuration * 2.0) {
         m_timeAccumulator = 0.0;
+    }
+
+    // Wrap playback time if duration is exceeded without loop signal
+    if (m_loop && m_duration > 0.0 && m_currentTime >= m_duration) {
+        m_currentTime = std::fmod(m_currentTime, m_duration);
+    }
+
+    // Calculate shadeoff / brightness factor
+    if (m_fadeDuration <= 0.001 || m_duration <= 0.0) {
+        m_currentBrightness = 1.0f;
+    } else {
+        double effectiveFade = std::min(m_fadeDuration, m_duration * 0.45);
+        double t = m_currentTime;
+        float factor = 1.0f;
+
+        // 1. Fade-in at start of loop: [0, effectiveFade] -> [0.0, 1.0]
+        if (t < effectiveFade) {
+            float p = static_cast<float>(t / effectiveFade);
+            p = std::clamp(p, 0.0f, 1.0f);
+            float fadeIn = 0.5f * (1.0f - std::cos(p * 3.14159265358979323846f));
+            factor = std::min(factor, fadeIn);
+        }
+
+        // 2. Shadeoff (fade-out to black) near end of loop: [m_duration - effectiveFade, m_duration] -> [1.0, 0.0]
+        if (t > (m_duration - effectiveFade)) {
+            float rem = static_cast<float>((m_duration - t) / effectiveFade);
+            rem = std::clamp(rem, 0.0f, 1.0f);
+            float fadeOut = 0.5f * (1.0f - std::cos(rem * 3.14159265358979323846f));
+            factor = std::min(factor, fadeOut);
+        }
+
+        m_currentBrightness = std::clamp(factor, 0.0f, 1.0f);
     }
 }
 
@@ -312,7 +378,16 @@ bool VideoPlayer::DecodeNextSample(std::vector<BYTE>& outBuffer) {
     }
 
     if (flags & MF_SOURCE_READERF_ENDOFSTREAM) {
+        if (m_lastSampleTimestamp > 0) {
+            double measured = static_cast<double>(m_lastSampleTimestamp) / 10000000.0 + m_frameDuration;
+            if (m_duration <= 0.0 || std::abs(m_duration - measured) > 0.5) {
+                m_duration = measured;
+            }
+        }
+
         if (m_loop) {
+            m_loopOccurred = true;
+
             PROPVARIANT var;
             PropVariantInit(&var);
             var.vt = VT_I8;
@@ -328,6 +403,7 @@ bool VideoPlayer::DecodeNextSample(std::vector<BYTE>& outBuffer) {
     }
 
     if (pSample) {
+        m_lastSampleTimestamp = timestamp;
         IMFMediaBuffer* pBuffer = NULL;
         if (SUCCEEDED(pSample->ConvertToContiguousBuffer(&pBuffer))) {
             BYTE* pData = NULL;

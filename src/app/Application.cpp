@@ -387,7 +387,8 @@ void Application::Render() {
     } else {
         int bgW = 0, bgH = 0;
         const BYTE* bgPixels = m_animController.GetBackgroundVideoFrame(bgW, bgH);
-        m_renderEngine.RenderAreas(m_grid.GetAreas(), bgPixels, bgW, bgH);
+        float bgBrightness = m_animController.GetBackgroundVideoBrightness();
+        m_renderEngine.RenderAreas(m_grid.GetAreas(), bgPixels, bgW, bgH, bgBrightness);
     }
 
     m_renderEngine.EndFrame();

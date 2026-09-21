@@ -147,6 +147,52 @@ bool TryParseWaitSeconds(std::string token, double& outSeconds) {
     return false;
 }
 
+bool TryParseColor(const std::string& token, COLORREF& outColor) {
+    if (token.empty()) return false;
+    std::string upper = ToUpper(token);
+
+    if (upper == "RED" || upper == "ROJO") { outColor = RGB(255, 0, 0); return true; }
+    if (upper == "GREEN" || upper == "VERDE") { outColor = RGB(0, 255, 0); return true; }
+    if (upper == "BLUE" || upper == "AZUL") { outColor = RGB(0, 80, 255); return true; }
+    if (upper == "CYAN" || upper == "AQUA" || upper == "CELESTE") { outColor = RGB(0, 255, 255); return true; }
+    if (upper == "MAGENTA" || upper == "FUCHSIA") { outColor = RGB(255, 0, 255); return true; }
+    if (upper == "YELLOW" || upper == "AMARILLO") { outColor = RGB(255, 230, 0); return true; }
+    if (upper == "ORANGE" || upper == "NARANJA") { outColor = RGB(255, 120, 0); return true; }
+    if (upper == "PURPLE" || upper == "MORADO" || upper == "VIOLETA" || upper == "VIOLET") { outColor = RGB(160, 32, 240); return true; }
+    if (upper == "PINK" || upper == "ROSA") { outColor = RGB(255, 105, 180); return true; }
+    if (upper == "GOLD" || upper == "DORADO") { outColor = RGB(255, 215, 0); return true; }
+    if (upper == "LIME" || upper == "LIMA") { outColor = RGB(50, 255, 50); return true; }
+    if (upper == "TURQUOISE" || upper == "TURQUESA") { outColor = RGB(64, 224, 208); return true; }
+    if (upper == "CORAL") { outColor = RGB(255, 127, 80); return true; }
+    if (upper == "CRIMSON") { outColor = RGB(220, 20, 60); return true; }
+    if (upper == "WHITE" || upper == "BLANCO") { outColor = RGB(255, 255, 255); return true; }
+    if (upper == "BLACK" || upper == "NEGRO") { outColor = RGB(0, 0, 0); return true; }
+    if (upper == "NEON_GREEN" || upper == "NEONGREEN") { outColor = RGB(57, 255, 20); return true; }
+    if (upper == "NEON_BLUE" || upper == "NEONBLUE") { outColor = RGB(31, 81, 255); return true; }
+    if (upper == "NEON_PINK" || upper == "NEONPINK") { outColor = RGB(255, 16, 240); return true; }
+
+    // Hex #RRGGBB or #RGB
+    if (upper[0] == '#' && (upper.size() == 7 || upper.size() == 4)) {
+        try {
+            if (upper.size() == 7) {
+                int r = std::stoi(upper.substr(1, 2), nullptr, 16);
+                int g = std::stoi(upper.substr(3, 2), nullptr, 16);
+                int b = std::stoi(upper.substr(5, 2), nullptr, 16);
+                outColor = RGB(r, g, b);
+                return true;
+            } else {
+                int r = std::stoi(upper.substr(1, 1) + upper.substr(1, 1), nullptr, 16);
+                int g = std::stoi(upper.substr(2, 1) + upper.substr(2, 1), nullptr, 16);
+                int b = std::stoi(upper.substr(3, 1) + upper.substr(3, 1), nullptr, 16);
+                outColor = RGB(r, g, b);
+                return true;
+            }
+        } catch (...) {}
+    }
+
+    return false;
+}
+
 bool FileExists(const std::wstring& path) {
     DWORD attr = GetFileAttributesW(path.c_str());
     return (attr != INVALID_FILE_ATTRIBUTES && !(attr & FILE_ATTRIBUTE_DIRECTORY));
@@ -406,30 +452,88 @@ bool AnimationParser::ParseString(const std::string& content, AnimationSequence&
             if (verbUpper == "ALL_ON" || verbUpper == "ALLON") {
                 AnimationAction action;
                 action.type = ActionType::AllOn;
+                std::string colToken;
+                if (cs >> colToken) {
+                    COLORREF c;
+                    if (TryParseColor(colToken, c)) {
+                        action.color = c;
+                    }
+                }
                 frame.actions.push_back(action);
             } else if (verbUpper == "ALL_OFF" || verbUpper == "ALLOFF" || verbUpper == "CLEAR") {
                 AnimationAction action;
                 action.type = ActionType::AllOff;
                 frame.actions.push_back(action);
             } else if (verbUpper == "ON") {
-                std::string arg;
-                cs >> arg;
-                std::string argUpper = ToUpper(arg);
-                if (argUpper == "ALL") {
+                std::vector<std::string> tokens;
+                std::string t;
+                while (cs >> t) {
+                    tokens.push_back(t);
+                }
+                COLORREF color = RGB(255, 255, 255);
+                std::vector<std::string> targetTokens;
+                for (const auto& tok : tokens) {
+                    COLORREF parsedCol;
+                    if (TryParseColor(tok, parsedCol)) {
+                        color = parsedCol;
+                    } else {
+                        targetTokens.push_back(tok);
+                    }
+                }
+                if (targetTokens.empty() || (targetTokens.size() == 1 && ToUpper(targetTokens[0]) == "ALL")) {
                     AnimationAction action;
                     action.type = ActionType::AllOn;
+                    action.color = color;
                     frame.actions.push_back(action);
-                } else if (IsDigitString(arg)) {
+                } else {
+                    for (const auto& tgt : targetTokens) {
+                        AnimationAction action;
+                        action.type = ActionType::TurnOn;
+                        action.color = color;
+                        if (IsDigitString(tgt)) {
+                            action.targetId = std::stoi(tgt);
+                            action.targetIndex = action.targetId - 1;
+                        } else {
+                            action.targetName = tgt;
+                        }
+                        frame.actions.push_back(action);
+                    }
+                }
+            } else if (verbUpper == "COLOR" || verbUpper == "SET_COLOR" || verbUpper == "SETCOLOR") {
+                std::vector<std::string> tokens;
+                std::string t;
+                while (cs >> t) {
+                    tokens.push_back(t);
+                }
+                COLORREF color = RGB(255, 255, 255);
+                std::vector<std::string> targetTokens;
+                for (const auto& tok : tokens) {
+                    COLORREF parsedCol;
+                    if (TryParseColor(tok, parsedCol)) {
+                        color = parsedCol;
+                    } else {
+                        targetTokens.push_back(tok);
+                    }
+                }
+                if (targetTokens.empty() || (targetTokens.size() == 1 && ToUpper(targetTokens[0]) == "ALL")) {
                     AnimationAction action;
-                    action.type = ActionType::TurnOn;
-                    action.targetId = std::stoi(arg);
-                    action.targetIndex = action.targetId - 1;
+                    action.type = ActionType::SetColor;
+                    action.targetId = -2; // ALL
+                    action.color = color;
                     frame.actions.push_back(action);
-                } else if (!arg.empty()) {
-                    AnimationAction action;
-                    action.type = ActionType::TurnOn;
-                    action.targetName = arg;
-                    frame.actions.push_back(action);
+                } else {
+                    for (const auto& tgt : targetTokens) {
+                        AnimationAction action;
+                        action.type = ActionType::SetColor;
+                        action.color = color;
+                        if (IsDigitString(tgt)) {
+                            action.targetId = std::stoi(tgt);
+                            action.targetIndex = action.targetId - 1;
+                        } else {
+                            action.targetName = tgt;
+                        }
+                        frame.actions.push_back(action);
+                    }
                 }
             } else if (verbUpper == "OFF") {
                 std::string arg;
@@ -612,6 +716,25 @@ bool AnimationParser::ParseString(const std::string& content, AnimationSequence&
                     AnimationAction action;
                     action.type = ActionType::SetBackgroundVideo;
                     action.videoPath = videoName;
+                    action.fadeDuration = 1.0;
+
+                    std::string extra;
+                    while (cs >> extra) {
+                        std::string upperExtra = ToUpper(extra);
+                        if (upperExtra.rfind("FADE=", 0) == 0) {
+                            double f = 1.0;
+                            if (TryParseDuration(extra.substr(5), f)) {
+                                action.fadeDuration = f;
+                            }
+                        } else if (upperExtra == "NOFADE" || upperExtra == "NO_FADE") {
+                            action.fadeDuration = 0.0;
+                        } else {
+                            double f = 1.0;
+                            if (TryParseDuration(extra, f)) {
+                                action.fadeDuration = f;
+                            }
+                        }
+                    }
                     frame.actions.push_back(action);
                 }
             } else if (verbUpper == "STOP_VIDEO" || verbUpper == "STOPVIDEO" ||
@@ -619,9 +742,13 @@ bool AnimationParser::ParseString(const std::string& content, AnimationSequence&
                 AnimationAction action;
                 action.type = ActionType::StopBackgroundVideo;
                 frame.actions.push_back(action);
-            } else if (verbUpper == "PALPITATE" || verbUpper == "PULSE" || verbUpper == "PALPITA") {
+            } else if (verbUpper == "PALPITATE" || verbUpper == "PULSE" || verbUpper == "PALPITA" ||
+                       verbUpper == "COLOR_CYCLE" || verbUpper == "RAINBOW") {
                 AnimationAction action;
                 action.type = ActionType::Palpitate;
+                if (verbUpper == "RAINBOW") {
+                    action.isRainbow = true;
+                }
                 action.minBrightness = 0.5f;
                 action.startBrightness = 0.5f;
                 action.maxBrightness = 1.0f;
@@ -642,6 +769,10 @@ bool AnimationParser::ParseString(const std::string& content, AnimationSequence&
                     }
                     if (tokUpper == "ALL" || tokUpper == "*") {
                         action.targetId = -2; // Sentinel for ALL
+                        continue;
+                    }
+                    if (tokUpper == "RAINBOW" || tokUpper == "HUE" || tokUpper == "ARCOIRIS" || tokUpper == "SPECTRUM") {
+                        action.isRainbow = true;
                         continue;
                     }
                     if (tokUpper.size() > 3 && (tokUpper.rfind("DEG") == tokUpper.size() - 3)) {
@@ -678,6 +809,11 @@ bool AnimationParser::ParseString(const std::string& content, AnimationSequence&
                         } catch (...) {}
                         continue;
                     }
+                    COLORREF parsedColor;
+                    if (TryParseColor(tok, parsedColor)) {
+                        action.colors.push_back(parsedColor);
+                        continue;
+                    }
                     if (IsDigitString(tok)) {
                         action.targetIds.push_back(std::stoi(tok));
                     } else {
@@ -685,28 +821,36 @@ bool AnimationParser::ParseString(const std::string& content, AnimationSequence&
                     }
                 }
 
-                if (pctList.size() == 1) {
-                    action.minBrightness = 0.0f;
-                    action.startBrightness = pctList[0].value;
-                    action.maxBrightness = pctList[0].value;
-                    action.startFalling = pctList[0].isDown;
-                } else if (pctList.size() == 2) {
-                    // Two percentages: min% max%. Defaults to starting at max% (100%) and falling towards min%
-                    action.minBrightness = pctList[0].value;
-                    action.startBrightness = pctList[1].value;
-                    action.maxBrightness = pctList[1].value;
-                    action.startFalling = true;
-                } else if (pctList.size() >= 3) {
-                    // min% start% max%
-                    action.minBrightness = pctList[0].value;
-                    action.startBrightness = pctList[1].value;
-                    action.maxBrightness = pctList[2].value;
-                    action.startFalling = pctList[1].isDown;
+                if (!pctList.empty()) {
+                    action.hasCustomBrightness = true;
+                    if (pctList.size() == 1) {
+                        action.minBrightness = 0.0f;
+                        action.startBrightness = pctList[0].value;
+                        action.maxBrightness = pctList[0].value;
+                        action.startFalling = pctList[0].isDown;
+                    } else if (pctList.size() == 2) {
+                        // Two percentages: min% max%. Defaults to starting at max% (100%) and falling towards min%
+                        action.minBrightness = pctList[0].value;
+                        action.startBrightness = pctList[1].value;
+                        action.maxBrightness = pctList[1].value;
+                        action.startFalling = true;
+                    } else if (pctList.size() >= 3) {
+                        // min% start% max%
+                        action.minBrightness = pctList[0].value;
+                        action.startBrightness = pctList[1].value;
+                        action.maxBrightness = pctList[2].value;
+                        action.startFalling = pctList[1].isDown;
+                    }
+
+                    if (action.minBrightness > action.maxBrightness) {
+                        std::swap(action.minBrightness, action.maxBrightness);
+                    }
                 }
 
-                if (action.minBrightness > action.maxBrightness) {
-                    std::swap(action.minBrightness, action.maxBrightness);
+                if (action.targetIds.empty() && action.targetName.empty() && action.targetId == -1) {
+                    action.targetId = -2; // Default to ALL if no specific area was specified
                 }
+
                 frame.actions.push_back(action);
             } else if (verbUpper == "STOP_PALPITATE" || verbUpper == "STOPPALPITATE" ||
                        verbUpper == "STOP_PULSE" || verbUpper == "STOPPULSE") {

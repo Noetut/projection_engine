@@ -50,19 +50,33 @@ public:
         outH = m_activeVideoPlayer->GetHeight();
         return m_activeVideoPlayer->GetFrameData();
     }
+    float GetBackgroundVideoBrightness() const {
+        return m_activeVideoPlayer ? m_activeVideoPlayer->GetBrightness() : 1.0f;
+    }
 
 private:
     void ApplyFrame(const AnimationFrame& frame, PatternGrid& grid);
 
+    enum class PalpitateMode {
+        Brightness, // Breathe brightness of a base color (default white)
+        TwoColors,  // Smoothly oscillate between colorA and colorB
+        Rainbow     // Continuously cycle through full rainbow hues
+    };
+
     struct ActivePalpitation {
         std::vector<int> areaIndices;
+        PalpitateMode mode = PalpitateMode::Brightness;
+        COLORREF colorA = RGB(255, 255, 255);
+        COLORREF colorB = RGB(255, 255, 255);
         float minBrightness = 0.5f;
         float maxBrightness = 1.0f;
         float frequency = 1.2f;
         double initialPhase = 0.0;
         double timer = 0.0;
+        bool hasCustomBrightness = false;
     };
 
+    COLORREF ComputePalpitationColor(const ActivePalpitation& p, double timer) const;
     void UpdatePalpitations(double deltaTime, PatternGrid& grid);
     void ClearPalpitations(PatternGrid& grid);
     void RemovePalpitationsForArea(int areaIndex, PatternGrid& grid);

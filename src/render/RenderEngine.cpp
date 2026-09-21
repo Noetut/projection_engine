@@ -1,5 +1,7 @@
 #include "RenderEngine.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <iostream>
@@ -55,6 +57,9 @@ RenderEngine::RenderEngine()
     , m_scratchBits(NULL)
     , m_scratchWidth(0)
     , m_scratchHeight(0)
+    , m_blackDC(NULL)
+    , m_blackBitmap(NULL)
+    , m_blackOldBitmap(NULL)
     , m_gdiplusToken(0)
     , m_fontCollection(nullptr)
 {
@@ -200,6 +205,20 @@ void RenderEngine::Cleanup() {
     m_scratchWidth = 0;
     m_scratchHeight = 0;
 
+    if (m_blackDC) {
+        if (m_blackOldBitmap) {
+            SelectObject(m_blackDC, m_blackOldBitmap);
+            m_blackOldBitmap = NULL;
+        }
+        DeleteDC(m_blackDC);
+        m_blackDC = NULL;
+    }
+
+    if (m_blackBitmap) {
+        DeleteObject(m_blackBitmap);
+        m_blackBitmap = NULL;
+    }
+
     for (auto& pair : m_imageCache) {
         if (pair.second) delete pair.second;
     }
@@ -301,8 +320,13 @@ void RenderEngine::RenderBlack() {
     FillRect(m_memDC, &rect, m_blackBrush ? m_blackBrush : (HBRUSH)GetStockObject(BLACK_BRUSH));
 }
 
-void RenderEngine::DrawBackgroundVideo(const BYTE* pixels, int videoWidth, int videoHeight) {
+void RenderEngine::DrawBackgroundVideo(const BYTE* pixels, int videoWidth, int videoHeight, float brightness) {
     if (!pixels || videoWidth <= 0 || videoHeight <= 0 || !m_memDC) return;
+
+    if (brightness <= 0.001f) {
+        RenderBlack();
+        return;
+    }
 
     BITMAPINFO bmi = {};
     bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -317,14 +341,29 @@ void RenderEngine::DrawBackgroundVideo(const BYTE* pixels, int videoWidth, int v
                   0, 0, m_width, m_height,
                   0, 0, videoWidth, videoHeight,
                   pixels, &bmi, DIB_RGB_COLORS, SRCCOPY);
+
+    if (brightness < 0.999f) {
+        EnsureBlackBitmap();
+        if (m_blackDC) {
+            BLENDFUNCTION bf = {};
+            bf.BlendOp = AC_SRC_OVER;
+            bf.BlendFlags = 0;
+            bf.SourceConstantAlpha = static_cast<BYTE>(std::clamp((1.0f - brightness) * 255.0f, 0.0f, 255.0f));
+            bf.AlphaFormat = 0;
+
+            AlphaBlend(m_memDC, 0, 0, m_width, m_height,
+                       m_blackDC, 0, 0, 16, 16, bf);
+        }
+    }
 }
 
 void RenderEngine::RenderAreas(const std::vector<ProjectionArea>& areas,
-                               const BYTE* bgVideoPixels, int bgVideoWidth, int bgVideoHeight) {
+                               const BYTE* bgVideoPixels, int bgVideoWidth, int bgVideoHeight,
+                               float bgVideoBrightness) {
     if (!m_memDC) return;
 
     if (bgVideoPixels && bgVideoWidth > 0 && bgVideoHeight > 0) {
-        DrawBackgroundVideo(bgVideoPixels, bgVideoWidth, bgVideoHeight);
+        DrawBackgroundVideo(bgVideoPixels, bgVideoWidth, bgVideoHeight, bgVideoBrightness);
     } else {
         RenderBlack();
     }
@@ -849,6 +888,33 @@ void RenderEngine::EnsureScratchBuffer(int minWidth, int minHeight) {
     m_scratchBitmap = CreateDIBSection(m_scratchDC, &bmi, DIB_RGB_COLORS, &m_scratchBits, NULL, 0);
     if (m_scratchDC && m_scratchBitmap) {
         m_scratchOldBitmap = (HBITMAP)SelectObject(m_scratchDC, m_scratchBitmap);
+    }
+}
+
+void RenderEngine::EnsureBlackBitmap() {
+    if (m_blackDC && m_blackBitmap) return;
+
+    HDC refDC = m_memDC ? m_memDC : m_hdc;
+    if (!refDC) return;
+
+    m_blackDC = CreateCompatibleDC(refDC);
+    if (!m_blackDC) return;
+
+    BITMAPINFO bmi = {};
+    bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bmi.bmiHeader.biWidth = 16;
+    bmi.bmiHeader.biHeight = 16;
+    bmi.bmiHeader.biPlanes = 1;
+    bmi.bmiHeader.biBitCount = 32;
+    bmi.bmiHeader.biCompression = BI_RGB;
+
+    void* bits = nullptr;
+    m_blackBitmap = CreateDIBSection(m_blackDC, &bmi, DIB_RGB_COLORS, &bits, NULL, 0);
+    if (m_blackBitmap && bits) {
+        std::memset(bits, 0, 16 * 16 * 4);
+    }
+    if (m_blackDC && m_blackBitmap) {
+        m_blackOldBitmap = (HBITMAP)SelectObject(m_blackDC, m_blackBitmap);
     }
 }
 

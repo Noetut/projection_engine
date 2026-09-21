@@ -11,6 +11,7 @@ enum class ActionType {
     TurnOn,
     TurnOff,
     Toggle,
+    SetColor,
     SetMask,
     SetImage,
     ClearImage,
@@ -36,6 +37,10 @@ struct AnimationAction {
     std::string fontFace = "Arial"; // Font family name
     int         fontSize = 32;      // Font size in points
     COLORREF    textColor = RGB(255, 255, 255); // Color of text glyphs
+    COLORREF    color = RGB(255, 255, 255);     // Base fill color for TurnOn, SetColor, AllOn
+    std::vector<COLORREF> colors;               // Colors for Palpitate (1 = single color breath, 2 = two-color oscillation)
+    bool        isRainbow = false;              // True for continuous rainbow hue cycling
+    bool        hasCustomBrightness = false;    // True if min/max % was explicitly set
     std::vector<bool> mask;         // Used for SetMask
     std::vector<int> targetIds;     // Multiple target IDs for bulk commands like Palpitate
     float       minBrightness = 0.5f;   // Min brightness for Palpitate (0.0 to 1.0)
@@ -45,6 +50,7 @@ struct AnimationAction {
     float       frequency = 1.2f;       // Frequency in Hz for Palpitate (smooth breathing pace)
     float       initialPhase = 0.0f;    // Custom phase in radians
     bool        hasCustomPhase = false; // True if custom phase was explicitly set
+    double      fadeDuration = 1.0;     // Fade/shadeoff duration in seconds for SetBackgroundVideo (default 1.0s)
 };
 
 struct AnimationFrame {

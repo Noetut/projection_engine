@@ -1,0 +1,53 @@
+# ==============================================================================
+# Animación: Fuegos Artificiales con Oscilaciones de Color y Ola Arcoíris
+# ==============================================================================
+# Configuración espacial de IDs:
+#   - Columna 1 (Izquierda - Vinilos):  0 (mecharadio), 1 (cancionero), 2 (turboviolencia)
+#   - Columna 2 (Marcos Izquierda):     3 (aneto), 9 (green_screen)
+#   - Columna 3 (Marcos Centro):        4 (brais_clouds), 8 (pepus)
+#   - Columna 4 (Marcos Derecha):       5 (brais_eyes), 7 (margarita)
+#   - Columna 5 (Derecha - Bufanda):    6 (scarf_vvv)
+# ==============================================================================
+name: Fuegos Artificiales (Color Waves)
+loop: true
+reset_images: true
+preload_videos: firework_video
+
+# ------------------------------------------------------------------------------
+# Fase 1: Inicio limpio y arranque del vídeo de fondo
+# ------------------------------------------------------------------------------
+0.1s CLEAR_IMAGES & ALL_OFF & STOP_PALPITATE & BG_VIDEO firework_video
+
+# ------------------------------------------------------------------------------
+# Fase 2: Ola de Ignición Pirotécnica con Oscilaciones de Color
+# Cada columna arranca con un retraso de 0.2s y oscila fluidamente entre dos
+# colores contrastados de fuegos artificiales a 1Hz.
+# ------------------------------------------------------------------------------
+# Columna 1 (Vinilos 0, 1, 2) - Oscilación Rojo Fuego <-> Dorado
+0.2s PALPITATE 0 1 2 red gold 1Hz 180deg
+
+# Columna 2 (Marcos 3, 9) - Oscilación Dorado <-> Verde Neón
+0.2s PALPITATE 3 9 gold neon_green 1Hz 180deg
+
+# Columna 3 (Marcos 4, 8) - Oscilación Cyan Eléctrico <-> Azul Neón
+0.2s PALPITATE 4 8 cyan neon_blue 1Hz 180deg
+
+# Columna 4 (Marcos 5, 7) - Oscilación Magenta <-> Púrpura Imperial
+0.2s PALPITATE 5 7 magenta purple 1Hz 180deg
+
+# Columna 5 (Bufanda 6) - Oscilación Rosa Neón <-> Naranja Vivo
+PALPITATE 6 neon_pink orange 1Hz 180deg
+
+# Sostener el espectáculo de oscilación cromática
+WAIT 6
+
+# ------------------------------------------------------------------------------
+# Fase 3: La Gran Oleada Arcoíris Continua (Rainbow Hue Traveling Wave)
+# Barrido espectral continuo donde todas las columnas van recorriendo el arcoíris
+# completo, desfasadas 45º entre columnas para formar una ola cromática fluida.
+# ------------------------------------------------------------------------------
+PALPITATE 0 1 2 RAINBOW 0.75Hz 0deg & PALPITATE 3 9 RAINBOW 0.75Hz 45deg & PALPITATE 4 8 RAINBOW 0.75Hz 90deg & PALPITATE 5 7 RAINBOW 0.75Hz 135deg & PALPITATE 6 RAINBOW 0.75Hz 180deg
+
+# Pausa interactiva o mantenimiento de la ola arcoíris
+WAIT_CLICK
+WAIT 8
