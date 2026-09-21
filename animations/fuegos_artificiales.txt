@@ -11,12 +11,12 @@
 name: Fuegos Artificiales (Color Waves)
 loop: true
 reset_images: true
-preload_videos: firework_video
+preload_videos: fireworksVideo
 
 # ------------------------------------------------------------------------------
 # Fase 1: Inicio limpio y arranque del vídeo de fondo
 # ------------------------------------------------------------------------------
-0.1s CLEAR_IMAGES & ALL_OFF & STOP_PALPITATE & BG_VIDEO firework_video
+0.1s CLEAR_IMAGES & ALL_OFF & STOP_PALPITATE & BG_VIDEO fireworksVideo
 
 # ------------------------------------------------------------------------------
 # Fase 2: Ola de Ignición Pirotécnica con Oscilaciones de Color

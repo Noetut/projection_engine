@@ -1,6 +1,12 @@
-# Área Ciclogénica Display
+# Projection Engine
 
-A lightweight, high-performance C++ Win32 projection engine for video mapping and animated light patterns on secondary monitors or projectors (1080p).
+<div align="center">
+  <img src="readMeGif02.gif" alt="Projection Engine demo 2" width="100%" />
+</div>
+
+Projection Engine is a C++ app. I used it to light up some of the stuff I have on the wall of my office. I don’t know what other uses it could have, but you can create new boxes, add text, calibrate them, and do a bunch of other nice things.
+I left a few demo animations so the idea is easy to understand: just a few clouds, some pew-pium-piam flashes, and a couple of colorful, slightly epileptic previews, and more.
+The idea is to animate using .txt files that define the step-by-step sequence of the desired animation.
 
 ---
 
@@ -27,12 +33,14 @@ cmake --build build
 .\build\PatronAnimation.exe 0 --anim animations\sequential_wave.txt
 ```
 
+> The binary name may vary depending on the current target name in CMake, but the application behavior and workflow remain the same.
+
 ---
 
 ## Main Modes & Controls
 
 ### Show & Animation Mode
-Projects calibrated geometric areas and plays text-based animation sequences at 60 FPS.
+Projects calibrated geometric areas and plays text-based animation sequences in real time.
 
 | Key / Input | Action |
 |:---|:---|
@@ -46,7 +54,7 @@ Projects calibrated geometric areas and plays text-based animation sequences at 
 | <kbd>Esc</kbd> | Exit application |
 
 ### Calibration Mode (<kbd>F1</kbd>)
-Interactive on-screen editor to align corners to physical real-world objects.
+Interactive on-screen editor used to align corners to physical objects and define the projection surface.
 
 | Key | Action |
 |:---|:---|
@@ -96,8 +104,8 @@ default_step: 300ms
 
 ## Project Structure
 
-```
-area_ciclogenica_display/
+```text
+projection_engine/
 ├── animations/         # Plain text animation scripts (*.txt)
 ├── config/             # pattern_config.json (canvas size & calibrated corners)
 ├── images/             # Target pattern reference images
@@ -108,5 +116,11 @@ area_ciclogenica_display/
 │   ├── display/        # Multi-monitor detection & borderless window
 │   ├── model/          # Quad geometry & JSON configuration I/O
 │   └── render/         # Double-buffered GDI engine with alpha HUD
-└── CMakeLists.txt      # Build configuration (MinGW + Ninja)
+├── CMakeLists.txt      # Build configuration (MinGW + Ninja)
+├── README.md           # Project documentation
+└── third_party/        # Third-party dependencies
 ```
+
+<div align="center">
+  <img src="readMeGif01.gif" alt="Projection Engine demo 1" width="100%" />
+</div>
