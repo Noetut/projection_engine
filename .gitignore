@@ -9,6 +9,3 @@ cmake-build-*/
 *.o
 *.a
 *.lib
-
-# Local project notes / AI tracker
-/gemini.md
