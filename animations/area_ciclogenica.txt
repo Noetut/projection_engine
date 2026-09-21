@@ -18,8 +18,8 @@ name: Área Ciclogénica
 loop: false
 default_step: 0.2s
 reset_images: true
-preload_images: cloud_01, Portada_original, talon_de_aquiles
-preload_videos: clouds_video
+preload_images: clouds01, clouds02
+preload_videos: videoClouds
 
 # ------------------------------------------------------------------------------
 # Segmento 0: Estado inicial apagado (en negro)
@@ -97,7 +97,7 @@ WAIT_CLICK
 # ------------------------------------------------------------------------------
 # Segmento 6 (antes Segmento 2):
 # Se apagan y tras 0.5s se van encendiendo de 0 a 8 una a una (0.1s cada una)
-# apagándose a continuación. Luego se proyecta la imagen cloud_01 en la zona 9.
+# apagándose a continuación. Luego se proyecta la imagen clouds01 en la zona 9.
 # ------------------------------------------------------------------------------
 0.5s ALL_OFF
 0.1s ON 0
@@ -109,25 +109,25 @@ WAIT_CLICK
 0.1s OFF 5 & ON 6
 0.1s OFF 6 & ON 7
 0.1s OFF 7 & ON 8
-OFF 8 & IMAGE 9 cloud_01
+OFF 8 & IMAGE 9 clouds01
 WAIT_CLICK
 
 # ------------------------------------------------------------------------------
 # Segmento 7: Foto de la editorial
-# Proyecta la imagen talon_de_aquiles en la zona 9 (frame_green_screen).
+# Proyecta una de las nubes disponibles en la zona 9 (frame_green_screen).
 # Espera a un clic izquierdo para avanzar al Segmento 8.
 # ------------------------------------------------------------------------------
-IMAGE 9 talon_de_aquiles
+IMAGE 9 clouds02
 WAIT_CLICK
 
 # ------------------------------------------------------------------------------
 # Segmento 8: Vídeo de fondo y título
-# Arranca el vídeo clouds_video de fondo (con shadeoff suave al loopear)
+# Arranca el vídeo videoClouds de fondo (con shadeoff suave al loopear)
 # y proyecta "ÁREA CICLOGÉNICA" en la caja de texto superior (ID 11).
 # La imagen de la editorial (zona 9) se mantiene por encima del vídeo de fondo.
 # Espera a un clic izquierdo.
 # ------------------------------------------------------------------------------
-BG_VIDEO clouds_video & TEXT 11 "Bebas Neue Cyrillic" 100 bold "ÁREA CICLOGÉNICA"
+BG_VIDEO videoClouds & TEXT 11 "Bebas Neue Cyrillic" 100 bold "ÁREA CICLOGÉNICA"
 WAIT_CLICK
 
 

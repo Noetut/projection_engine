@@ -13,8 +13,8 @@ name: Show Espectacular
 loop: true
 default_step: 0.1s
 reset_images: true
-preload_images: cloud_01, Portada_original, talon_de_aquiles
-preload_videos: clouds_video, firework_video
+preload_images: clouds01, clouds02
+preload_videos: videoClouds, fireworksVideo
 
 # ------------------------------------------------------------------------------
 # ACTO 1: EL DESPERTAR DEL MAPEO (Grid Awakening & Chromatic Chase)
@@ -67,14 +67,14 @@ preload_videos: clouds_video, firework_video
 # Vídeo de nubes de fondo, tipografía cinemática y respiración cromática armónica.
 # ------------------------------------------------------------------------------
 # Arranca vídeo de nubes con banner de texto superior
-0.2s BG_VIDEO clouds_video & TEXT 11 "Bebas Neue Cyrillic" 105 bold "ÁREA CICLOGÉNICA"
+0.2s BG_VIDEO videoClouds & TEXT 11 "Bebas Neue Cyrillic" 105 bold "ÁREA CICLOGÉNICA"
 
 # Respiración cromática en vinilos: oscilaciones suaves entre tonos oceánicos (0.8Hz)
 0.2s PALPITATE 0 cyan blue 0.8Hz 0deg & PALPITATE 1 aqua purple 0.8Hz 120deg & PALPITATE 2 neon_blue magenta 0.8Hz 240deg
 
 # Proyección de imágenes de arte en marcos simétricos
-0.3s IMAGE 9 cloud_01
-0.3s IMAGE 4 Portada_original
+0.3s IMAGE 9 clouds01
+0.3s IMAGE 4 clouds02
 
 # Contrapunto de oscilación en marcos laterales y bufanda (turquesa <-> dorado, neón <-> magenta)
 0.2s PALPITATE 3 5 turquoise gold 1.1Hz 0deg & PALPITATE 8 7 neon_blue cyan 1.1Hz 180deg & PALPITATE 6 purple magenta 0.6Hz 90deg
@@ -115,7 +115,7 @@ WAIT 1.5
 # Estallido de fuegos artificiales, expansión radial en oro/rojo y duelo de ajedrez cyan/magenta.
 # ------------------------------------------------------------------------------
 # Explosión central dorada sincronizada con fuegos artificiales
-0.06s BG_VIDEO firework_video & TEXT 11 "Bebas Neue Cyrillic" 100 bold "SUPERNOVA" & ON 4 8 gold
+0.06s BG_VIDEO fireworksVideo & TEXT 11 "Bebas Neue Cyrillic" 100 bold "SUPERNOVA" & ON 4 8 gold
 
 # Expansión radial hacia afuera (Naranja -> Rojo fuego)
 0.06s OFF 4 8 & ON 3 9 5 7 orange
@@ -158,8 +158,8 @@ TEXT 11 "Bebas Neue Cyrillic" 105 bold "ÁREA CICLOGÉNICA"
 0.12s PALPITATE 6 RAINBOW 0.8Hz 180deg
 
 # Proyección de arte fotográfico flotando sobre la ola arcoíris
-0.5s IMAGE 9 talon_de_aquiles
-0.5s IMAGE 4 cloud_01
+0.5s IMAGE 9 clouds02
+0.5s IMAGE 4 clouds01
 
 # La ola arcoíris y los fuegos fluyen juntos armónicamente
 WAIT 6

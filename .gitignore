@@ -1,38 +1,14 @@
-# Build output
-build/
-bin/
-out/
-*.exe
+# Local build output only
+/build/
+CMakeFiles/
+CMakeCache.txt
+cmake-build-*/
+
+# Compiled object files and libraries produced by local builds
 *.obj
 *.o
 *.a
 *.lib
 
-# Test videos and large media
-videoTests/
-VideoTest/
-[Vv]ideo[Tt]est*/
-
-# Scratch and temporary files
-scratch/
-
-# Images and media assets (only keep reference pattern Patrón.png)
-images/*
-!images/Patr*n.png
-!images/Patrón.png
-!images/Patron.png
-
-# Backup files
-*.bak
-
-# IDE and Editor files
-.vscode/
-.idea/
-*.user
-*.suo
-CMakeSettings.json
-
-# Operating System files
-Thumbs.db
-desktop.ini
-.DS_Store
+# Local project notes / AI tracker
+/gemini.md
