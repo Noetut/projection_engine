@@ -4,9 +4,7 @@
   <img src="readMeGif02.gif" alt="Projection Engine demo 2" width="100%" />
 </div>
 
-Projection Engine is a C++ app. I used it to light up some of the stuff I have on the wall of my office. I don’t know what other uses it could have, but you can create new boxes, add text, calibrate them, and do a bunch of other nice things.
-I left a few demo animations so the idea is easy to understand: just a few clouds, some pew-pium-piam flashes, and a couple of colorful, slightly epileptic previews, and more.
-The idea is to animate using .txt files that define the step-by-step sequence of the desired animation.
+**Projection Engine** is a C++ app I built to light up some of the stuff hanging on my office wall. I don't know what other uses you might find for it, but it lets you map out boxes, throw in text, calibrate corners to physical surfaces, and do a bunch of neat projection tricks. I've included a few demo animations so the concept is easy to grasp right away: some drifting clouds, a couple of *pew-pium-piam* flashes, and a few colorful, slightly epileptic light shows—all driven by plain `.txt` files that script your animation sequences step by step.
 
 ---
 
