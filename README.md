@@ -92,11 +92,16 @@ default_step: 300ms
 100ms ON 2
 ```
 
-- **Supported commands**: `ALL_ON`, `ALL_OFF`, `ON <id>`, `OFF <id>`, `TOGGLE <id>`, `MASK <bits>`, `WAIT <duration>`, `WAIT_CLICK` (pause until left mouse click), `IMAGE <id> <name>` (render image centered and cropped inside area borders), `CLEAR_IMAGE <id/ALL>`, `CLEAR_IMAGES` / `ALL_WHITE` (clear all images and restore white solid squares), `PRELOAD <name>` (preload image into memory), `TEXT <id> [font] [size] "<text>"` (renders text with zero background, strictly inside quad boundaries), `CLEAR_TEXT <id/ALL>` (removes projected text).
-- **Headers**: `name:`, `loop: true/false`, `default_step: <duration>`, `reset_images: true` (ensures all squares start clean and white), `preload_images: <img1, img2>` (preloads and decodes images at startup for zero-delay playback).
+- **Supported commands**:
+  - Light control: `ALL_ON`, `ALL_OFF`, `ON <id>`, `OFF <id>`, `TOGGLE <id>`, `MASK <bits>`, `PALPITATE <id> [options]`, `STOP_PALPITATE`
+  - Media & Video: `BG_VIDEO <name> [NOFADE]`, `STOP_VIDEO`, `IMAGE <id> <name>`, `CLEAR_IMAGE <id/ALL>`, `CLEAR_IMAGES`
+  - Text projection: `TEXT <id> [font] [size] "<text>"`, `CLEAR_TEXT <id/ALL>`
+  - Sequence control: `WAIT <duration>`, `WAIT_CLICK` (pause until left mouse click or cue)
+  - Preloading: `PRELOAD <name>`, `PRELOAD_VIDEO <name>`
+- **Asset Fallback**: If any requested video or image is not found, the engine automatically falls back to rendering `images/EMPTY.png` as an on-screen warning.
+- **Headers**: `name:`, `loop: true/false`, `default_step: <duration>`, `reset_images: true`, `preload_images: <img1, img2>`, `preload_videos: <vid1, vid2>`.
 - **Segments / Cues**: Split your show into interactive mouse-controlled sections with `WAIT_CLICK` or `SEGMENT: <title>`.
-- **Timing**: Use `ms` (e.g. `100ms`) or `s` (e.g. `0.5s`).
-- Combine actions on the same line with `&` (e.g. `300ms ON 1 & OFF 2`).
+- **Timing**: Use `ms` (e.g. `100ms`) or `s` (e.g. `0.5s`). Combine actions on the same line with `&` (e.g. `300ms ON 1 & OFF 2`).
 
 ---
 
@@ -105,18 +110,15 @@ default_step: 300ms
 ```text
 projection_engine/
 ├── animations/         # Plain text animation scripts (*.txt)
-├── config/             # pattern_config.json (canvas size & calibrated corners)
-├── images/             # Target pattern reference images
-├── src/
-│   ├── anim/           # Animation sequencer & script parser
-│   ├── app/            # Application lifecycle & main loop (60 FPS)
-│   ├── calib/          # Calibration controller & undo stack
-│   ├── display/        # Multi-monitor detection & borderless window
-│   ├── model/          # Quad geometry & JSON configuration I/O
-│   └── render/         # Double-buffered GDI engine with alpha HUD
-├── CMakeLists.txt      # Build configuration (MinGW + Ninja)
-├── README.md           # Project documentation
-└── third_party/        # Third-party dependencies
+├── build/              # Local build artifacts (ignored by git)
+├── config/             # pattern_config.json (canvas resolution & calibrated quad corners)
+├── fonts/              # Custom TrueType fonts (e.g. Bebas Neue)
+├── images/             # Media assets & warning placeholder (EMPTY.png)
+├── include/            # Flat C++ header files (*.h)
+├── src/                # Flat C++ source files (*.cpp)
+├── third_party/        # Vendored dependencies (nlohmann/json)
+├── CMakeLists.txt      # Build configuration (CMake 3.16+)
+└── README.md           # Project documentation
 ```
 
 <div align="center">
