@@ -6,9 +6,9 @@
 #include <algorithm>
 #include <windows.h>
 #include "AnimationParser.h"
-#include "model/PatternGrid.h"
-#include "render/RenderEngine.h"
-#include "util/StringUtil.h"
+#include "PatternGrid.h"
+#include "RenderEngine.h"
+#include "StringUtil.h"
 
 AnimationController::AnimationController()
     : m_activeVideoPlayer(nullptr)
@@ -17,6 +17,7 @@ AnimationController::AnimationController()
     , m_isPlaying(false)
     , m_isWaitingForClick(false)
     , m_frameApplied(false)
+    , m_backgroundVideoMissing(false)
 {
 }
 
@@ -42,6 +43,7 @@ bool AnimationController::LoadFromSequence(const AnimationSequence& sequence) {
     m_isPlaying = !m_sequence.Empty();
     m_isWaitingForClick = false;
     m_frameApplied = false;
+    m_backgroundVideoMissing = false;
 
     m_activePalpitations.clear();
     if (m_activeVideoPlayer) {
@@ -241,6 +243,7 @@ void AnimationController::Stop() {
     m_isPlaying = false;
     m_isWaitingForClick = false;
     m_frameApplied = false;
+    m_backgroundVideoMissing = false;
     m_currentFrameIndex = 0;
     m_frameTimer = 0.0;
     if (m_activeVideoPlayer) {
@@ -253,6 +256,7 @@ void AnimationController::Stop() {
 void AnimationController::Restart(PatternGrid& grid) {
     if (m_sequence.Empty()) return;
     ClearPalpitations(grid);
+    m_backgroundVideoMissing = false;
     if (m_activeVideoPlayer) {
         m_activeVideoPlayer->Stop();
         m_activeVideoPlayer = nullptr;
@@ -304,8 +308,33 @@ void AnimationController::TriggerClick(PatternGrid& grid) {
                       << (m_currentFrameIndex + 1) << "/" << m_sequence.frames.size() << "]" << std::endl;
         }
     } else {
-        std::cout << "[Animation] Mouse click received while playing (Frame "
-                  << (m_currentFrameIndex + 1) << "/" << m_sequence.frames.size() << ")" << std::endl;
+        m_frameTimer = 0.0;
+        ++m_currentFrameIndex;
+
+        if (m_currentFrameIndex >= m_sequence.frames.size()) {
+            if (m_sequence.loop) {
+                m_currentFrameIndex = 0;
+                if (m_sequence.resetImages) {
+                    grid.ClearAllImages();
+                    grid.ClearAllTexts();
+                }
+            } else {
+                m_currentFrameIndex = m_sequence.frames.size() - 1;
+                m_isPlaying = false;
+                std::cout << "[Animation] Sequence finished (non-looping)." << std::endl;
+                return;
+            }
+        }
+
+        ApplyFrame(m_sequence.frames[m_currentFrameIndex], grid);
+        std::cout << "[Animation] Mouse click trigger! Advanced to frame "
+                  << (m_currentFrameIndex + 1) << "/" << m_sequence.frames.size() << std::endl;
+
+        if (m_sequence.frames[m_currentFrameIndex].waitForClick) {
+            m_isWaitingForClick = true;
+            std::cout << "[Animation] Paused waiting for click [Frame "
+                      << (m_currentFrameIndex + 1) << "/" << m_sequence.frames.size() << "]" << std::endl;
+        }
     }
 }
 
@@ -517,9 +546,15 @@ void AnimationController::ApplyFrame(const AnimationFrame& frame, PatternGrid& g
                 m_activeVideoPlayer = it->second.get();
                 m_activeVideoPlayer->SetFadeDuration(action.fadeDuration);
                 m_activeVideoPlayer->Play();
+                m_backgroundVideoMissing = false;
             } else {
                 std::cerr << "[AnimationController] Could not find or open background video: "
-                          << action.videoPath << std::endl;
+                          << action.videoPath << " -> Displaying EMPTY warning placeholder." << std::endl;
+                if (m_activeVideoPlayer) {
+                    m_activeVideoPlayer->Stop();
+                    m_activeVideoPlayer = nullptr;
+                }
+                m_backgroundVideoMissing = true;
             }
             break;
         }
@@ -529,6 +564,7 @@ void AnimationController::ApplyFrame(const AnimationFrame& frame, PatternGrid& g
                 m_activeVideoPlayer->Stop();
                 m_activeVideoPlayer = nullptr;
             }
+            m_backgroundVideoMissing = false;
             break;
         }
 

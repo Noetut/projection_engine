@@ -8,8 +8,8 @@
 #include <mmsystem.h>
 #include <timeapi.h>
 
-#include "anim/AnimationParser.h"
-#include "util/StringUtil.h"
+#include "AnimationParser.h"
+#include "StringUtil.h"
 
 namespace {
 
@@ -388,7 +388,8 @@ void Application::Render() {
         int bgW = 0, bgH = 0;
         const BYTE* bgPixels = m_animController.GetBackgroundVideoFrame(bgW, bgH);
         float bgBrightness = m_animController.GetBackgroundVideoBrightness();
-        m_renderEngine.RenderAreas(m_grid.GetAreas(), bgPixels, bgW, bgH, bgBrightness);
+        bool bgVideoMissing = m_animController.IsBackgroundVideoMissing();
+        m_renderEngine.RenderAreas(m_grid.GetAreas(), bgPixels, bgW, bgH, bgBrightness, bgVideoMissing);
     }
 
     m_renderEngine.EndFrame();

@@ -8,14 +8,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Project include paths
 set(PROJECT_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/anim
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/app
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/calib
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/display
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/media
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/model
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/render
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/util
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party
 )
 
@@ -23,33 +15,33 @@ include_directories(${PROJECT_INCLUDE_DIRS})
 
 # Source files
 set(SOURCES
-    source/main.cpp
-    source/display/DisplayManager.cpp
-    source/render/RenderEngine.cpp
-    source/app/Application.cpp
-    source/model/PatternGrid.cpp
-    source/model/PatternConfig.cpp
-    source/calib/CalibrationController.cpp
-    source/anim/AnimationParser.cpp
-    source/anim/AnimationController.cpp
-    source/media/VideoPlayer.cpp
+    src/main.cpp
+    src/DisplayManager.cpp
+    src/RenderEngine.cpp
+    src/Application.cpp
+    src/PatternGrid.cpp
+    src/PatternConfig.cpp
+    src/CalibrationController.cpp
+    src/AnimationParser.cpp
+    src/AnimationController.cpp
+    src/VideoPlayer.cpp
 )
 
 # Headers
 set(HEADERS
-    include/display/DisplayManager.h
-    include/render/RenderEngine.h
-    include/app/Application.h
-    include/model/Geometry.h
-    include/model/ProjectionArea.h
-    include/model/PatternGrid.h
-    include/model/PatternConfig.h
-    include/calib/CalibrationController.h
-    include/anim/AnimationTypes.h
-    include/anim/AnimationParser.h
-    include/anim/AnimationController.h
-    include/media/VideoPlayer.h
-    include/util/StringUtil.h
+    include/DisplayManager.h
+    include/RenderEngine.h
+    include/Application.h
+    include/Geometry.h
+    include/ProjectionArea.h
+    include/PatternGrid.h
+    include/PatternConfig.h
+    include/CalibrationController.h
+    include/AnimationTypes.h
+    include/AnimationParser.h
+    include/AnimationController.h
+    include/VideoPlayer.h
+    include/StringUtil.h
 )
 
 # Executable output

@@ -6,9 +6,10 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
-#include "model/ProjectionArea.h"
+#include "ProjectionArea.h"
 
 class RenderEngine {
 public:
@@ -29,9 +30,10 @@ public:
     // --- Show mode --------------------------------------------------------
     void RenderBlack();
     void DrawBackgroundVideo(const BYTE* pixels, int videoWidth, int videoHeight, float brightness = 1.0f);
+    void DrawBackgroundFallbackImage(const std::string& imageName = "EMPTY");
     void RenderAreas(const std::vector<ProjectionArea>& areas,
                      const BYTE* bgVideoPixels = nullptr, int bgVideoWidth = 0, int bgVideoHeight = 0,
-                     float bgVideoBrightness = 1.0f);
+                     float bgVideoBrightness = 1.0f, bool bgVideoMissing = false);
 
     // --- Image & Text rendering ------------------------------------------
     void DrawQuadImage(const Quad& quad, Gdiplus::Bitmap* bitmap, const std::string& imagePath = "");
@@ -114,6 +116,14 @@ private:
     HBITMAP m_blackBitmap;
     HBITMAP m_blackOldBitmap;
     void    EnsureBlackBitmap();
+
+    // Background fallback DC and bitmap for missing media placeholder
+    HDC     m_bgFallbackDC;
+    HBITMAP m_bgFallbackBitmap;
+    HBITMAP m_bgFallbackOldBitmap;
+    int     m_bgFallbackWidth;
+    int     m_bgFallbackHeight;
+    void    EnsureBgFallbackBitmap(Gdiplus::Bitmap* bmp);
 
     void LoadCustomFonts();
 

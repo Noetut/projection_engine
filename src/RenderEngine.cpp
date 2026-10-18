@@ -9,7 +9,7 @@
 #include <vector>
 #include <sstream>
 
-#include "util/StringUtil.h"
+#include "StringUtil.h"
 
 namespace {
 
@@ -60,6 +60,11 @@ RenderEngine::RenderEngine()
     , m_blackDC(NULL)
     , m_blackBitmap(NULL)
     , m_blackOldBitmap(NULL)
+    , m_bgFallbackDC(NULL)
+    , m_bgFallbackBitmap(NULL)
+    , m_bgFallbackOldBitmap(NULL)
+    , m_bgFallbackWidth(0)
+    , m_bgFallbackHeight(0)
     , m_gdiplusToken(0)
     , m_fontCollection(nullptr)
 {
@@ -219,8 +224,31 @@ void RenderEngine::Cleanup() {
         m_blackBitmap = NULL;
     }
 
+    if (m_bgFallbackDC) {
+        if (m_bgFallbackOldBitmap) {
+            SelectObject(m_bgFallbackDC, m_bgFallbackOldBitmap);
+            m_bgFallbackOldBitmap = NULL;
+        }
+        DeleteDC(m_bgFallbackDC);
+        m_bgFallbackDC = NULL;
+    }
+
+    if (m_bgFallbackBitmap) {
+        DeleteObject(m_bgFallbackBitmap);
+        m_bgFallbackBitmap = NULL;
+    }
+
+    m_bgFallbackWidth = 0;
+    m_bgFallbackHeight = 0;
+
+    std::unordered_set<Gdiplus::Bitmap*> uniqueBitmaps;
     for (auto& pair : m_imageCache) {
-        if (pair.second) delete pair.second;
+        if (pair.second) {
+            uniqueBitmaps.insert(pair.second);
+        }
+    }
+    for (Gdiplus::Bitmap* bmp : uniqueBitmaps) {
+        delete bmp;
     }
     m_imageCache.clear();
 
@@ -359,11 +387,13 @@ void RenderEngine::DrawBackgroundVideo(const BYTE* pixels, int videoWidth, int v
 
 void RenderEngine::RenderAreas(const std::vector<ProjectionArea>& areas,
                                const BYTE* bgVideoPixels, int bgVideoWidth, int bgVideoHeight,
-                               float bgVideoBrightness) {
+                               float bgVideoBrightness, bool bgVideoMissing) {
     if (!m_memDC) return;
 
     if (bgVideoPixels && bgVideoWidth > 0 && bgVideoHeight > 0) {
         DrawBackgroundVideo(bgVideoPixels, bgVideoWidth, bgVideoHeight, bgVideoBrightness);
+    } else if (bgVideoMissing) {
+        DrawBackgroundFallbackImage("EMPTY");
     } else {
         RenderBlack();
     }
@@ -416,9 +446,28 @@ Gdiplus::Bitmap* RenderEngine::GetOrLoadImage(const std::string& path) {
     candidates.push_back("../../images/" + path + ".jpg");
     candidates.push_back("../../images/" + path + ".png");
 
+    wchar_t exeBuf[MAX_PATH] = { 0 };
+    DWORD written = GetModuleFileNameW(NULL, exeBuf, MAX_PATH);
+    if (written > 0 && written < MAX_PATH) {
+        std::wstring exePath(exeBuf);
+        size_t slash = exePath.find_last_of(L"\\/");
+        if (slash != std::wstring::npos) {
+            std::string exeDir = WideToUtf8(exePath.substr(0, slash));
+            candidates.push_back(exeDir + "/" + path);
+            candidates.push_back(exeDir + "/" + path + ".jpg");
+            candidates.push_back(exeDir + "/" + path + ".png");
+            candidates.push_back(exeDir + "/images/" + path);
+            candidates.push_back(exeDir + "/images/" + path + ".jpg");
+            candidates.push_back(exeDir + "/images/" + path + ".png");
+            candidates.push_back(exeDir + "/../images/" + path);
+            candidates.push_back(exeDir + "/../images/" + path + ".jpg");
+            candidates.push_back(exeDir + "/../images/" + path + ".png");
+        }
+    }
+
     std::wstring foundPath;
     for (const auto& cand : candidates) {
-        std::wstring wide = AnsiToWide(cand);
+        std::wstring wide = Utf8ToWide(cand);
         DWORD attr = GetFileAttributesW(wide.c_str());
         if (attr != INVALID_FILE_ATTRIBUTES && !(attr & FILE_ATTRIBUTE_DIRECTORY)) {
             foundPath = wide;
@@ -428,6 +477,12 @@ Gdiplus::Bitmap* RenderEngine::GetOrLoadImage(const std::string& path) {
 
     if (foundPath.empty()) {
         std::cerr << "[RenderEngine] ERROR: Could not locate image for '" << path << "'." << std::endl;
+        if (path != "EMPTY" && path != "empty" && path != "EMPTY.png" && path != "empty.png") {
+            std::cout << "[RenderEngine] Falling back to EMPTY warning image for '" << path << "'." << std::endl;
+            Gdiplus::Bitmap* fallback = GetOrLoadImage("EMPTY");
+            m_imageCache[path] = fallback;
+            return fallback;
+        }
         m_imageCache[path] = nullptr;
         return nullptr;
     }
@@ -436,6 +491,12 @@ Gdiplus::Bitmap* RenderEngine::GetOrLoadImage(const std::string& path) {
     if (!bitmap || bitmap->GetLastStatus() != Gdiplus::Ok) {
         std::cerr << "[RenderEngine] ERROR: Failed to decode image file: " << path << std::endl;
         if (bitmap) delete bitmap;
+        if (path != "EMPTY" && path != "empty" && path != "EMPTY.png" && path != "empty.png") {
+            std::cout << "[RenderEngine] Falling back to EMPTY warning image for '" << path << "'." << std::endl;
+            Gdiplus::Bitmap* fallback = GetOrLoadImage("EMPTY");
+            m_imageCache[path] = fallback;
+            return fallback;
+        }
         m_imageCache[path] = nullptr;
         return nullptr;
     }
@@ -675,17 +736,30 @@ void RenderEngine::DrawQuadText(const Quad& quad, const std::string& text,
         format->SetFormatFlags(Gdiplus::StringFormatFlagsNoWrap | Gdiplus::StringFormatFlagsMeasureTrailingSpaces);
 
         Gdiplus::REAL effectiveFontSize = static_cast<Gdiplus::REAL>(fontSize);
-        if (effectiveFontSize <= 0.0f) {
+        const Gdiplus::REAL maxAllowedW = static_cast<Gdiplus::REAL>(dstW);
+        const Gdiplus::REAL maxAllowedH = static_cast<Gdiplus::REAL>(dstH);
+
+        bool needsAutoFit = (effectiveFontSize <= 0.0f);
+        if (!needsAutoFit) {
+            Gdiplus::Font testFont(family, effectiveFontSize, fontStyle, Gdiplus::UnitPoint);
+            Gdiplus::RectF bounds;
+            graphics.MeasureString(wideText.c_str(), -1, &testFont, Gdiplus::PointF(0, 0), format, &bounds);
+            if (bounds.Width > maxAllowedW || bounds.Height > maxAllowedH) {
+                needsAutoFit = true;
+            }
+        }
+
+        if (needsAutoFit) {
             Gdiplus::REAL minPt = 8.0f;
-            Gdiplus::REAL maxPt = 350.0f;
-            Gdiplus::REAL bestPt = 32.0f;
+            Gdiplus::REAL maxPt = (effectiveFontSize > 0.0f) ? effectiveFontSize : 400.0f;
+            Gdiplus::REAL bestPt = 8.0f;
 
             for (int iter = 0; iter < 18; ++iter) {
                 Gdiplus::REAL midPt = (minPt + maxPt) / 2.0f;
                 Gdiplus::Font testFont(family, midPt, fontStyle, Gdiplus::UnitPoint);
                 Gdiplus::RectF bounds;
                 graphics.MeasureString(wideText.c_str(), -1, &testFont, Gdiplus::PointF(0, 0), format, &bounds);
-                if (bounds.Width <= static_cast<Gdiplus::REAL>(dstW)) {
+                if (bounds.Width <= maxAllowedW && bounds.Height <= maxAllowedH) {
                     bestPt = midPt;
                     minPt = midPt;
                 } else {
@@ -915,6 +989,90 @@ void RenderEngine::EnsureBlackBitmap() {
     }
     if (m_blackDC && m_blackBitmap) {
         m_blackOldBitmap = (HBITMAP)SelectObject(m_blackDC, m_blackBitmap);
+    }
+}
+
+void RenderEngine::EnsureBgFallbackBitmap(Gdiplus::Bitmap* bmp) {
+    if (m_bgFallbackBitmap && m_bgFallbackWidth == m_width && m_bgFallbackHeight == m_height) {
+        return;
+    }
+
+    if (m_bgFallbackDC) {
+        if (m_bgFallbackOldBitmap) {
+            SelectObject(m_bgFallbackDC, m_bgFallbackOldBitmap);
+            m_bgFallbackOldBitmap = NULL;
+        }
+        DeleteDC(m_bgFallbackDC);
+        m_bgFallbackDC = NULL;
+    }
+
+    if (m_bgFallbackBitmap) {
+        DeleteObject(m_bgFallbackBitmap);
+        m_bgFallbackBitmap = NULL;
+    }
+
+    m_bgFallbackWidth = 0;
+    m_bgFallbackHeight = 0;
+
+    HDC refDC = m_memDC ? m_memDC : m_hdc;
+    if (!refDC || !bmp || m_width <= 0 || m_height <= 0) return;
+
+    m_bgFallbackDC = CreateCompatibleDC(refDC);
+    if (!m_bgFallbackDC) return;
+
+    m_bgFallbackBitmap = CreateCompatibleBitmap(refDC, m_width, m_height);
+    if (!m_bgFallbackBitmap) {
+        DeleteDC(m_bgFallbackDC);
+        m_bgFallbackDC = NULL;
+        return;
+    }
+
+    m_bgFallbackOldBitmap = (HBITMAP)SelectObject(m_bgFallbackDC, m_bgFallbackBitmap);
+    m_bgFallbackWidth = m_width;
+    m_bgFallbackHeight = m_height;
+
+    // Fill entire screen with black
+    RECT rc = { 0, 0, m_width, m_height };
+    FillRect(m_bgFallbackDC, &rc, m_blackBrush ? m_blackBrush : (HBRUSH)GetStockObject(BLACK_BRUSH));
+
+    // Render EMPTY warning image centered, preserving aspect ratio
+    UINT imgW = bmp->GetWidth();
+    UINT imgH = bmp->GetHeight();
+    if (imgW > 0 && imgH > 0) {
+        double targetAspect = static_cast<double>(m_width) / static_cast<double>(m_height);
+        double imgAspect = static_cast<double>(imgW) / static_cast<double>(imgH);
+
+        int dstX = 0, dstY = 0, dstW = m_width, dstH = m_height;
+        if (imgAspect > targetAspect) {
+            dstW = m_width;
+            dstH = static_cast<int>(m_width / imgAspect);
+            dstY = (m_height - dstH) / 2;
+        } else {
+            dstH = m_height;
+            dstW = static_cast<int>(m_height * imgAspect);
+            dstX = (m_width - dstW) / 2;
+        }
+
+        Gdiplus::Graphics graphics(m_bgFallbackDC);
+        graphics.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBilinear);
+        graphics.DrawImage(bmp, dstX, dstY, dstW, dstH);
+    }
+}
+
+void RenderEngine::DrawBackgroundFallbackImage(const std::string& imageName) {
+    if (!m_memDC) return;
+
+    Gdiplus::Bitmap* bmp = GetOrLoadImage(imageName);
+    if (!bmp) {
+        RenderBlack();
+        return;
+    }
+
+    EnsureBgFallbackBitmap(bmp);
+    if (m_bgFallbackDC) {
+        BitBlt(m_memDC, 0, 0, m_width, m_height, m_bgFallbackDC, 0, 0, SRCCOPY);
+    } else {
+        RenderBlack();
     }
 }
 

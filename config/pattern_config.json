@@ -300,23 +300,23 @@
             "id": 10,
             "type": "text",
             "name": "text_display",
-            "description": "Text projection box",
+            "description": "Centered text projection box",
             "corners": [
                 {
-                    "x": 600,
-                    "y": 820
+                    "x": 40,
+                    "y": 80
                 },
                 {
-                    "x": 1400,
-                    "y": 820
+                    "x": 1880,
+                    "y": 80
                 },
                 {
-                    "x": 1400,
-                    "y": 980
+                    "x": 1880,
+                    "y": 1000
                 },
                 {
-                    "x": 600,
-                    "y": 980
+                    "x": 40,
+                    "y": 1000
                 }
             ],
             "color": [
@@ -324,7 +324,7 @@
                 255,
                 255
             ],
-            "visible": false
+            "visible": true
         },
         {
             "id": 11,

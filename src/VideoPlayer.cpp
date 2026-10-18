@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <cmath>
 
-#include "util/StringUtil.h"
+#include "StringUtil.h"
 
 VideoPlayer::VideoPlayer()
     : m_reader(NULL)
@@ -331,8 +331,8 @@ void VideoPlayer::Update(double deltaTime) {
         m_timeAccumulator = 0.0;
     }
 
-    // Wrap playback time if duration is exceeded without loop signal
-    if (m_loop && m_duration > 0.0 && m_currentTime >= m_duration) {
+    // Safety fallback: wrap playback time only if past duration without loop signal
+    if (m_loop && m_duration > 0.0 && m_currentTime >= m_duration + 0.5) {
         m_currentTime = std::fmod(m_currentTime, m_duration);
     }
 
@@ -387,6 +387,7 @@ bool VideoPlayer::DecodeNextSample(std::vector<BYTE>& outBuffer) {
 
         if (m_loop) {
             m_loopOccurred = true;
+            m_lastSampleTimestamp = 0;
 
             PROPVARIANT var;
             PropVariantInit(&var);

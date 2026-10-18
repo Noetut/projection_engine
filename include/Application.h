@@ -4,12 +4,12 @@
 #include <chrono>
 #include <string>
 
-#include "anim/AnimationController.h"
-#include "calib/CalibrationController.h"
-#include "display/DisplayManager.h"
-#include "model/PatternConfig.h"
-#include "model/PatternGrid.h"
-#include "render/RenderEngine.h"
+#include "AnimationController.h"
+#include "CalibrationController.h"
+#include "DisplayManager.h"
+#include "PatternConfig.h"
+#include "PatternGrid.h"
+#include "RenderEngine.h"
 
 struct AppOptions {
     int          monitorIndex = 1;  // 0-indexed; 1 = second monitor

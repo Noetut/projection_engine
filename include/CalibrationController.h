@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
-#include "model/PatternConfig.h"
-#include "model/PatternGrid.h"
+#include "PatternConfig.h"
+#include "PatternGrid.h"
 
 // Interactive calibration: selects a projection area, nudges either a single
 // corner or the whole quad, creates/duplicates/deletes areas, and persists the

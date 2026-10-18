@@ -1,0 +1,56 @@
+# ==============================================================================
+# Presentación: Área Ciclogénica
+# Textos gigantes centrados en pantalla usando ID 10 (text_display)
+# Vídeos en bucle continuo a pantalla completa sin cortes a negro (NOFADE)
+# Avance por clic: cada vídeo loopea hasta que haces clic para avanzar
+# ==============================================================================
+name: Presentacion Area Ciclogenica
+loop: false
+default_step: 0.2s
+reset_images: true
+preload_videos: areaCiclogenica, chaqueton, tercero, mqpi, spot, marDeNubes, fireworksVideo
+
+# ------------------------------------------------------------------------------
+# SETUP INICIAL
+# ------------------------------------------------------------------------------
+0.5s CLEAR_IMAGES & CLEAR_TEXT ALL & STOP_VIDEO & ALL_OFF
+
+# ------------------------------------------------------------------------------
+# SLIDE 1: PORTADA
+# ------------------------------------------------------------------------------
+BG_VIDEO areaCiclogenica NOFADE & TEXT 10 "Bebas Neue Cyrillic" 210 bold "ÁREA CICLOGÉNICA" & WAIT_CLICK
+
+# ------------------------------------------------------------------------------
+# SLIDE 2: CHAQUETÓN
+# ------------------------------------------------------------------------------
+BG_VIDEO chaqueton NOFADE & TEXT 10 "Bebas Neue Cyrillic" 280 bold "CHAQUETÓN" & WAIT_CLICK
+
+# ------------------------------------------------------------------------------
+# SLIDE 3: TERCERO
+# ------------------------------------------------------------------------------
+BG_VIDEO tercero NOFADE & TEXT 10 "Bebas Neue Cyrillic" 280 bold "TERCERO" & WAIT_CLICK
+
+# ------------------------------------------------------------------------------
+# SLIDE 4: MI QUERIDO PÚBLICO INVISIBLE
+# ------------------------------------------------------------------------------
+BG_VIDEO mqpi NOFADE & TEXT 10 "Bebas Neue Cyrillic" 145 bold "MI QUERIDO PÚBLICO INVISIBLE" & WAIT_CLICK
+
+# ------------------------------------------------------------------------------
+# SLIDE 5: SPOT
+# ------------------------------------------------------------------------------
+BG_VIDEO spot NOFADE & TEXT 10 "Bebas Neue Cyrillic" 320 bold "SPOT" & WAIT_CLICK
+
+# ------------------------------------------------------------------------------
+# SLIDE 6: MAR DE NUBES
+# ------------------------------------------------------------------------------
+BG_VIDEO marDeNubes NOFADE & TEXT 10 "Bebas Neue Cyrillic" 260 bold "MAR DE NUBES" & WAIT_CLICK
+
+# ------------------------------------------------------------------------------
+# SLIDE 7: CIERRE (FUEGOS ARTIFICIALES)
+# ------------------------------------------------------------------------------
+BG_VIDEO fireworksVideo NOFADE & TEXT 10 "Bebas Neue Cyrillic" 210 bold "ÁREA CICLOGÉNICA" & WAIT_CLICK
+
+# ------------------------------------------------------------------------------
+# SALIDA FINAL TRAS EL ÚLTIMO CLICK
+# ------------------------------------------------------------------------------
+0.5s CLEAR_TEXT ALL & STOP_VIDEO & ALL_OFF

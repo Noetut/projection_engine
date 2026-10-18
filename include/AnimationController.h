@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <vector>
 #include "AnimationTypes.h"
-#include "media/VideoPlayer.h"
+#include "VideoPlayer.h"
 
 class PatternGrid;
 class RenderEngine;
@@ -53,6 +53,9 @@ public:
     float GetBackgroundVideoBrightness() const {
         return m_activeVideoPlayer ? m_activeVideoPlayer->GetBrightness() : 1.0f;
     }
+    bool IsBackgroundVideoMissing() const {
+        return m_backgroundVideoMissing;
+    }
 
 private:
     void ApplyFrame(const AnimationFrame& frame, PatternGrid& grid);
@@ -91,6 +94,7 @@ private:
     bool              m_isPlaying;
     bool              m_isWaitingForClick;
     bool              m_frameApplied;
+    bool              m_backgroundVideoMissing;
     std::vector<ActivePalpitation> m_activePalpitations;
 };
 

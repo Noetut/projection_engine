@@ -3,7 +3,7 @@
 #include <iostream>
 #include <sstream>
 
-#include "util/StringUtil.h"
+#include "StringUtil.h"
 
 namespace {
 

@@ -6,7 +6,7 @@
 #include <sstream>
 #include <windows.h>
 
-#include "util/StringUtil.h"
+#include "StringUtil.h"
 
 namespace {
 

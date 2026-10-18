@@ -3,8 +3,8 @@
 #include <iostream>
 #include <string>
 
-#include "app/Application.h"
-#include "util/StringUtil.h"
+#include "Application.h"
+#include "StringUtil.h"
 
 namespace {
 
